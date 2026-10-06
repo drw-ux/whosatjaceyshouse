@@ -1,0 +1,1141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#7fd0ff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Jacey's House">
+<title>Who's at Jacey's House?</title>
+<meta name="description" content="Real-time residential occupancy intelligence. Entirely fictional.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M4 15 16 4l12 11v13H4z' fill='%23e5391f'/%3E%3Crect x='13' y='18' width='6' height='10' fill='%23fff8ec'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #fff8ec;
+    --panel: #fffdf7;
+    --ink: #17140f;
+    --muted: #6f675a;
+    --line: #17140f;
+    --soft: #e9dfcc;
+    --alert: #e5391f;
+    --ok: #1f8a4c;
+    --warn: #c98a00;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --sans: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14120e; --panel: #1c1914; --ink: #f6eedd; --muted: #a39a88;
+      --line: #f6eedd; --soft: #332e25; --alert: #ff5a3c; --ok: #4cc47d; --warn: #f0b429;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--sans); line-height: 1.4;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+
+  /* top bar */
+  .bar {
+    border-bottom: 2px solid var(--line);
+    font-family: var(--mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase;
+  }
+  .bar .wrap { display: flex; justify-content: space-between; gap: 12px; padding-top: 10px; padding-bottom: 10px; flex-wrap: wrap; }
+  .live { display: inline-flex; align-items: center; gap: 8px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--alert); animation: pulse 1.4s infinite; }
+  @keyframes pulse { 50% { opacity: .2; } }
+
+  /* hero */
+  .hero { padding: 48px 0 40px; border-bottom: 2px solid var(--line); }
+  .q {
+    font-family: var(--mono); font-size: clamp(13px, 2.2vw, 16px);
+    letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0 0 14px;
+  }
+  .answer {
+    font-size: clamp(38px, 8.4vw, 104px); line-height: .98; font-weight: 800;
+    letter-spacing: -.035em; margin: 0; text-wrap: balance; min-height: 2em;
+  }
+  .answer.swap { animation: swap .35s ease; }
+  @keyframes swap { from { opacity: 0; transform: translateY(10px); } }
+  .detail { font-size: clamp(16px, 2.4vw, 22px); color: var(--muted); margin: 18px 0 0; max-width: 46ch; }
+  .actions { margin-top: 28px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+  button {
+    font: 700 15px var(--mono); letter-spacing: .06em; text-transform: uppercase;
+    background: var(--ink); color: var(--bg); border: 2px solid var(--ink);
+    padding: 14px 22px; cursor: pointer; box-shadow: 5px 5px 0 var(--alert);
+    transition: transform .08s, box-shadow .08s;
+  }
+  button:hover { transform: translate(2px, 2px); box-shadow: 3px 3px 0 var(--alert); }
+  button:active { transform: translate(5px, 5px); box-shadow: none; }
+  button:focus-visible { outline: 3px solid var(--alert); outline-offset: 3px; }
+  .stamp { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+
+  /* dashboard */
+  h2 {
+    font-family: var(--mono); font-size: 13px; letter-spacing: .12em; text-transform: uppercase;
+    margin: 44px 0 14px; display: flex; align-items: center; gap: 12px;
+  }
+  h2::after { content: ""; flex: 1; height: 2px; background: var(--line); }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .kpi { background: var(--panel); border: 2px solid var(--line); padding: 16px; }
+  .kpi .label { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .kpi .val { font-size: clamp(30px, 4.6vw, 46px); font-weight: 800; letter-spacing: -.03em; line-height: 1.1; margin-top: 6px; font-variant-numeric: tabular-nums; }
+  .kpi .note { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .up { color: var(--alert); } .ok { color: var(--ok); } .warn { color: var(--warn); }
+
+  .grid2 { display: grid; grid-template-columns: 3fr 2fr; gap: 12px; align-items: start; }
+  .panel { background: var(--panel); border: 2px solid var(--line); padding: 18px; min-width: 0; }
+  .panel h3 { margin: 0 0 4px; font-size: 17px; }
+  .panel .sub { font-size: 13px; color: var(--muted); margin: 0 0 14px; }
+
+  .chart svg { width: 100%; height: auto; display: block; }
+  .chart text { font-family: var(--mono); font-size: 10px; fill: var(--muted); }
+  .chart .bar-r { fill: var(--ink); }
+  .chart .bar-r.peak { fill: var(--alert); }
+  .chart .axis { stroke: var(--line); stroke-width: 2; }
+
+  .surface { padding: 12px 0; border-top: 1px solid var(--soft); }
+  .surface:first-of-type { border-top: 0; padding-top: 0; }
+  .surface .row { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+  .surface .name { font-weight: 700; }
+  .surface .pct { font-family: var(--mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .meter { height: 10px; border: 2px solid var(--line); margin: 6px 0; }
+  .meter i { display: block; height: 100%; background: var(--ink); transition: width .6s ease; }
+  .meter i.over { background: var(--alert); }
+  .surface .who { font-size: 13px; color: var(--muted); }
+
+  .tablewrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 520px; }
+  th { text-align: left; font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 0 10px 8px 0; border-bottom: 2px solid var(--line); }
+  td { padding: 10px 10px 10px 0; border-bottom: 1px solid var(--soft); vertical-align: top; }
+  td.t { font-family: var(--mono); white-space: nowrap; font-size: 13px; }
+  .tag { display: inline-block; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; border: 2px solid currentColor; padding: 1px 6px; white-space: nowrap; }
+
+  .proj { margin: 0; padding: 0; list-style: none; }
+  .proj li { padding: 10px 0; border-top: 1px solid var(--soft); font-size: 14px; display: flex; justify-content: space-between; gap: 14px; }
+  .proj li:first-child { border-top: 0; padding-top: 0; }
+  .proj b { font-family: var(--mono); white-space: nowrap; }
+
+  .ticker { border-top: 2px solid var(--line); border-bottom: 2px solid var(--line); margin-top: 44px; overflow: hidden; background: var(--ink); color: var(--bg); }
+  .ticker div { display: inline-block; white-space: nowrap; padding: 10px 0; font-family: var(--mono); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; animation: scroll 70s linear infinite; }
+  @keyframes scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  footer { padding: 26px 0 60px; font-size: 13px; color: var(--muted); }
+  footer p { margin: 0 0 6px; max-width: 70ch; }
+
+  @media (max-width: 820px) {
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .grid2 { grid-template-columns: 1fr; }
+    .hero { padding: 32px 0 30px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .dot, .ticker div, .answer.swap { animation: none; }
+  }
+
+  /* front door cam scene */
+  .scene {
+    position: relative; height: 100vh; height: 100svh; min-height: 520px; max-height: 1100px;
+    overflow: hidden; background: #7fd0ff; border-bottom: 2px solid var(--line);
+    -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none;
+  }
+  .scene canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: manipulation; cursor: pointer; }
+  .sc-top {
+    position: absolute; left: 0; right: 0; top: 0; pointer-events: none; color: #17140f;
+    padding: calc(env(safe-area-inset-top, 0px) + 12px) calc(env(safe-area-inset-right, 0px) + 16px) 0 calc(env(safe-area-inset-left, 0px) + 16px);
+  }
+  .sc-cam { font: 700 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; display: flex; justify-content: space-between; gap: 10px; }
+  .sc-cam .rec { display: inline-flex; align-items: center; gap: 6px; }
+  .sc-cam .dot { background: #e5391f; }
+  .sc-title { font-weight: 800; font-size: clamp(26px, 7.6vw, 46px); letter-spacing: -.035em; line-height: 1; margin: 8px 0 10px; }
+  .sc-pills { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; }
+  .pill {
+    background: #fffdf7; color: #17140f; border: 2px solid #17140f; box-shadow: 3px 3px 0 #17140f;
+    font: 700 12px var(--mono); padding: 5px 8px; max-width: 100%;
+  }
+  .pill.count { background: #e5391f; color: #fff; }
+  .sc-hint {
+    position: absolute; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 9px);
+    display: flex; justify-content: center; gap: 10px; align-items: center; pointer-events: none;
+    font: 700 11px var(--mono); letter-spacing: .05em; text-transform: uppercase; color: #fff;
+    text-shadow: 0 1px 0 #17140f, 0 0 6px rgba(0,0,0,.6);
+  }
+  .sc-hint span { background: rgba(23,20,15,.78); padding: 4px 8px; text-shadow: none; }
+  .sc-hint a { pointer-events: auto; color: #17140f; background: #fffdf7; border: 2px solid #17140f; padding: 3px 8px; text-decoration: none; text-shadow: none; }
+  @media (max-height: 600px) { .sc-cam { display: none; } .sc-title { margin-top: 0; } }
+</style>
+</head>
+<body>
+
+<section class="scene" id="scene-wrap" aria-label="Cartoon of the front of a house with a steady stream of invented guests coming and going, and a golden retriever named Charlie greeting them">
+  <canvas id="scene"></canvas>
+  <div class="sc-top">
+    <div class="sc-cam"><span class="rec"><span class="dot"></span> Rec &middot; Front door cam 01</span><span>Live</span></div>
+    <p class="sc-title">Who's at Jacey's house?</p>
+    <div class="sc-pills">
+      <span class="pill count" id="sc-count">Inside: 0</span>
+      <span class="pill" id="sc-status">Watching the door.</span>
+    </div>
+  </div>
+  <div class="sc-hint"><span id="sc-hint-text">Tap to ring the bell &middot; Pet Charlie</span><a href="#stats">Stats &darr;</a></div>
+</section>
+
+<div class="bar" id="stats">
+  <div class="wrap">
+    <span class="live"><span class="dot"></span> Live &middot; Jacey Residential Occupancy Monitor</span>
+    <span id="clock">--:--:--</span>
+  </div>
+</div>
+
+<main class="wrap">
+
+  <section class="hero" aria-live="polite">
+    <p class="q">Who's at Jacey's house right now?</p>
+    <h1 class="answer" id="answer">Checking the driveway.</h1>
+    <p class="detail" id="detail">&nbsp;</p>
+    <div class="actions">
+      <button id="again" type="button">Check again</button>
+      <span class="stamp" id="stamp"></span>
+    </div>
+  </section>
+
+  <h2>Key performance indicators</h2>
+  <section class="kpis">
+    <div class="kpi"><div class="label">Current occupancy</div><div class="val" id="k-occ">0</div><div class="note" id="k-occ-n"></div></div>
+    <div class="kpi"><div class="label">Guests today</div><div class="val" id="k-day">0</div><div class="note up" id="k-day-n"></div></div>
+    <div class="kpi"><div class="label">Couch utilization</div><div class="val" id="k-couch">0%</div><div class="note" id="k-couch-n"></div></div>
+    <div class="kpi"><div class="label">Snack reserves</div><div class="val" id="k-snack">0%</div><div class="note" id="k-snack-n"></div></div>
+  </section>
+
+  <h2>Throughput and sleeping surfaces</h2>
+  <section class="grid2">
+    <div class="panel chart">
+      <h3>Guest throughput, last 24 hours</h3>
+      <p class="sub" id="chart-sub">Doorbell events per hour.</p>
+      <div id="chart"></div>
+    </div>
+    <div class="panel">
+      <h3>Bed and nap surface utilization</h3>
+      <p class="sub">Percent of rated capacity. Pillows count as occupants.</p>
+      <div id="beds"></div>
+    </div>
+  </section>
+
+  <h2>Activity</h2>
+  <section class="grid2">
+    <div class="panel">
+      <h3>Guest log</h3>
+      <p class="sub">Most recent arrivals. Departures are rarely observed.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Time</th><th>Guest</th><th>Stated purpose</th><th>Status</th></tr></thead>
+          <tbody id="log"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>Quarterly outlook</h3>
+      <p class="sub">Forward-looking statements. Not audited.</p>
+      <ul class="proj" id="proj"></ul>
+    </div>
+  </section>
+
+</main>
+
+<div class="ticker" aria-hidden="true"><div id="ticker"></div></div>
+
+<footer class="wrap">
+  <p><strong>This is a joke.</strong> Every guest, statistic, and raccoon on this page is invented and randomly generated in your browser. No house is being monitored and no real person is depicted.</p>
+  <p>Made with love and questionable judgment by a friend.</p>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- Entirely fictional guest roster ----------
+  var GUESTS = [
+    { who: "A medieval lute player.", short: "Medieval lute player", detail: "Has not stopped playing. Takes requests, but only from the 1300s.", purpose: "Minstrelsy" },
+    { who: "Three raccoons in a trench coat.", short: "Three raccoons in a trench coat", detail: "Introduced themselves as a single man named Blorth. Nobody has pushed back.", purpose: "\"Business\"" },
+    { who: "A Roomba salesman who will not leave.", short: "Roomba salesman", detail: "The demo ended ninety minutes ago. He is now just watching it go.", purpose: "Product demo" },
+    { who: "A man here to look at the gutters.", short: "Gutter guy", detail: "Nobody called him. He has not gone outside once.", purpose: "Gutters, allegedly" },
+    { who: "A lost Civil War reenactor.", short: "Civil War reenactor", detail: "Refuses to break character. Has asked twice where the telegraph is.", purpose: "Seeking his regiment" },
+    { who: "A lighthouse keeper on shore leave.", short: "Lighthouse keeper", detail: "Keeps turning the porch light on and off, slowly, out of habit.", purpose: "Shore leave" },
+    { who: "A very polite Viking.", short: "Polite Viking", detail: "Removed his boots at the door without being asked. Brought a casserole.", purpose: "Pillage (cancelled)" },
+    { who: "Two rival magicians.", short: "Two rival magicians", detail: "Each claims the other one followed him here. Several coasters are missing.", purpose: "Unclear" },
+    { who: "A sommelier, but for tap water.", short: "Tap water sommelier", detail: "Describes the kitchen faucet as \"municipal, with a confident finish.\"", purpose: "Tasting" },
+    { who: "A professional Santa in the off season.", short: "Off-season Santa", detail: "Wearing cargo shorts. Still knows what everyone wants.", purpose: "Networking" },
+    { who: "A dad looking for the thermostat.", short: "Somebody's dad", detail: "Not Jacey's dad. Not anyone's dad that we can confirm. Lowered it to 66.", purpose: "Thermostat audit" },
+    { who: "A cowboy who is allergic to horses.", short: "Horse-allergic cowboy", detail: "Arrived on a rented scooter. Tipped his hat to the couch.", purpose: "Just passing through" },
+    { who: "A man assembling a shelf nobody ordered.", short: "Shelf assembler", detail: "There are eleven screws left over. He says that is normal.", purpose: "Assembly" },
+    { who: "The ghost of a Victorian chimney sweep.", short: "Victorian ghost", detail: "Harmless. Mostly comments on the lack of chimney.", purpose: "Haunting, light" },
+    { who: "A guy explaining the stock market to the dog.", short: "Stock market guy", detail: "The dog is up 4% on the year. He is not.", purpose: "Financial literacy" },
+    { who: "A submarine captain with no submarine.", short: "Submarine captain", detail: "Asked permission to come aboard. Has been calling the hallway \"the corridor.\"", purpose: "Awaiting orders" },
+    { who: "A competitive yodeler in training.", short: "Competitive yodeler", detail: "Regionals are in two weeks. The neighbors are aware.", purpose: "Rehearsal" },
+    { who: "A man who only communicates in golf claps.", short: "Golf clap man", detail: "Seems supportive of everything so far.", purpose: "Spectating" },
+    { who: "An apologetic Canadian lumberjack.", short: "Canadian lumberjack", detail: "Said sorry to the coffee table. Twice. Brought his own flannel for the couch.", purpose: "Apologizing" },
+    { who: "Nobody. For once.", short: "Nobody", detail: "Sensors report an empty house. Analysts are calling it a data error.", purpose: "n/a", empty: true }
+  ];
+
+  var STATUSES = [
+    ["On couch", "ok"], ["In kitchen", "warn"], ["Still here", "up"], ["Napping", "ok"],
+    ["Near snacks", "warn"], ["Unaccounted for", "up"], ["In the yard", "ok"], ["Extended stay", "up"]
+  ];
+
+  var TICKER = [
+    "Doorbell rings for 14th time today",
+    "Couch declared at capacity, overflow routed to ottoman",
+    "Snack reserves downgraded from \"low\" to \"theoretical\"",
+    "Analysts raise full-year guest forecast",
+    "Guest bed reports record third-quarter nap volume",
+    "Shoe pile at front door reaches structural height",
+    "Lute performance enters fourth hour",
+    "Raccoons deny being raccoons",
+    "Thermostat adjusted by unknown party",
+    "Driveway parking index hits all-time high",
+    "Air mattress remains deflated, sources say"
+  ];
+
+  // ---------- helpers ----------
+  var $ = function (id) { return document.getElementById(id); };
+  var rand = function (a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; };
+  var pick = function (arr) { return arr[rand(0, arr.length - 1)]; };
+  var el = function (tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  };
+  function sample(arr, n, exclude) {
+    var pool = arr.filter(function (g) { return g !== exclude && !g.empty; });
+    var out = [];
+    while (out.length < n && pool.length) out.push(pool.splice(rand(0, pool.length - 1), 1)[0]);
+    return out;
+  }
+  function fmtTime(d) {
+    return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  }
+
+  // ---------- render ----------
+  var last = null;
+
+  function render() {
+    var g;
+    do { g = Math.random() < 0.04 ? GUESTS[GUESTS.length - 1] : pick(GUESTS.slice(0, -1)); } while (g === last);
+    last = g;
+
+    var a = $("answer");
+    a.textContent = g.who;
+    a.classList.remove("swap"); void a.offsetWidth; a.classList.add("swap");
+    $("detail").textContent = g.detail;
+    $("stamp").textContent = "Last verified " + fmtTime(new Date()) + " by a guy across the street";
+
+    var others = g.empty ? [] : sample(GUESTS, rand(1, 4), g);
+    var present = g.empty ? [] : [g].concat(others);
+    var occ = present.length;
+
+    // KPIs
+    $("k-occ").textContent = occ;
+    $("k-occ-n").textContent = occ === 0 ? "Statistically impossible" : "Plus Jacey. Rated capacity: 2";
+    var today = occ + rand(6, 19);
+    $("k-day").textContent = today;
+    $("k-day-n").textContent = "▲ " + rand(8, 41) + "% vs. yesterday";
+    var couch = g.empty ? 0 : rand(110, 340);
+    $("k-couch").textContent = couch + "%";
+    $("k-couch-n").textContent = couch > 100 ? "Over capacity. Ottoman deployed." : "Cushions resting";
+    var snack = g.empty ? 100 : rand(0, 14);
+    $("k-snack").textContent = snack + "%";
+    $("k-snack-n").textContent = snack === 0 ? "One loose almond remains" : snack < 20 ? "Depletion rate: " + (rand(18, 46) / 10).toFixed(1) + " bags/hr" : "Fully stocked, somehow";
+
+    renderChart();
+    renderBeds(present);
+    renderLog(present);
+    renderProj();
+  }
+
+  function renderChart() {
+    var W = 600, H = 210, pad = 22, n = 24, bw = (W - pad * 2) / n;
+    var vals = [], max = 0, peak = 0;
+    for (var h = 0; h < n; h++) {
+      var base = h < 7 ? 1 : h < 11 ? 3 : h < 17 ? 5 : h < 23 ? 9 : 4;
+      var v = Math.max(0, base + rand(-1, 3));
+      vals.push(v);
+      if (v > max) { max = v; peak = h; }
+    }
+    var ns = "http://www.w3.org/2000/svg";
+    var svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", "Bar chart of doorbell events per hour, peaking in the evening");
+    vals.forEach(function (v, i) {
+      var bh = (v / max) * (H - 50);
+      var r = document.createElementNS(ns, "rect");
+      r.setAttribute("x", pad + i * bw + 2);
+      r.setAttribute("y", H - 26 - bh);
+      r.setAttribute("width", bw - 4);
+      r.setAttribute("height", bh);
+      r.setAttribute("class", "bar-r" + (i === peak ? " peak" : ""));
+      svg.appendChild(r);
+      if (i % 3 === 0) {
+        var t = document.createElementNS(ns, "text");
+        t.setAttribute("x", pad + i * bw + bw / 2);
+        t.setAttribute("y", H - 8);
+        t.setAttribute("text-anchor", "middle");
+        t.textContent = (i % 12 === 0 ? 12 : i % 12) + (i < 12 ? "a" : "p");
+        svg.appendChild(t);
+      }
+    });
+    var ax = document.createElementNS(ns, "line");
+    ax.setAttribute("x1", pad); ax.setAttribute("x2", W - pad);
+    ax.setAttribute("y1", H - 25); ax.setAttribute("y2", H - 25);
+    ax.setAttribute("class", "axis");
+    svg.appendChild(ax);
+    var c = $("chart"); c.textContent = ""; c.appendChild(svg);
+    var hr = (peak % 12 === 0 ? 12 : peak % 12) + (peak < 12 ? " AM" : " PM");
+    $("chart-sub").textContent = "Doorbell events per hour. Peak: " + max + " at " + hr + ".";
+  }
+
+  function renderBeds(present) {
+    var names = present.map(function (p) { return p.short; });
+    var n1 = names[1] || names[0], n2 = names[2] || names[0];
+    var rows = present.length === 0 ? [
+      ["Jacey's bed", 100, "Jacey, plus " + rand(7, 14) + " decorative pillows. Finally."],
+      ["Guest bed", 0, "Made. Suspiciously well."],
+      ["Couch", 0, "Recovering."],
+      ["Air mattress", 0, "Deflated since Q2."]
+    ] : [
+      ["Jacey's bed", 100, "Jacey's, and only Jacey's. Also " + rand(7, 14) + " decorative pillows and a laptop."],
+      ["Guest bed", rand(100, 300), n1 + ", fully clothed, on top of the covers, shoes on."],
+      ["Couch", rand(120, 280), n2 + ", asleep sitting up with the TV remote."],
+      ["Air mattress", rand(5, 40), "Slow leak. " + names[0] + " is closer to the floor every hour."]
+    ];
+    var box = $("beds"); box.textContent = "";
+    rows.forEach(function (r) {
+      var s = el("div", "surface");
+      var row = el("div", "row");
+      row.appendChild(el("span", "name", r[0]));
+      row.appendChild(el("span", "pct", r[1] + "%"));
+      var m = el("div", "meter"), bar = el("i", r[1] > 100 ? "over" : "");
+      bar.style.width = Math.min(100, r[1]) + "%";
+      m.appendChild(bar);
+      s.appendChild(row); s.appendChild(m); s.appendChild(el("div", "who", r[2]));
+      box.appendChild(s);
+    });
+  }
+
+  function renderLog(present) {
+    var rows = present.concat(sample(GUESTS, Math.max(0, 6 - present.length), null)).slice(0, 6);
+    var t = Date.now(), body = $("log"); body.textContent = "";
+    rows.forEach(function (g) {
+      t -= rand(4, 38) * 60000;
+      var tr = el("tr");
+      tr.appendChild(el("td", "t", fmtTime(new Date(t))));
+      tr.appendChild(el("td", "", g.short));
+      tr.appendChild(el("td", "", g.purpose));
+      var st = pick(STATUSES), td = el("td");
+      td.appendChild(el("span", "tag " + st[1], st[0]));
+      tr.appendChild(td);
+      body.appendChild(tr);
+    });
+  }
+
+  function renderProj() {
+    var items = [
+      ["Guest volume, next quarter", "▲ " + rand(11, 34) + "%"],
+      ["Mean time between doorbells", rand(6, 19) + " min"],
+      ["Shoes at front door", (rand(3, 9) * 2 + 1) + " (odd)"],
+      ["Average length of stay", rand(3, 9) + "h " + rand(10, 59) + "m"],
+      ["Guests who brought snacks", rand(0, 2) + " of " + rand(9, 20)],
+      ["Driveway availability", "0 spots"],
+      ["Nap conversion rate", rand(41, 88) + "%"]
+    ];
+    var ul = $("proj"); ul.textContent = "";
+    items.forEach(function (i) {
+      var li = el("li");
+      li.appendChild(el("span", "", i[0]));
+      li.appendChild(el("b", "", i[1]));
+      ul.appendChild(li);
+    });
+  }
+
+  // ---------- boot ----------
+  var line = TICKER.join("  •  ") + "  •  ";
+  $("ticker").textContent = line + line;
+
+  function tick() { $("clock").textContent = new Date().toLocaleTimeString(); }
+  tick(); setInterval(tick, 1000);
+
+  $("again").addEventListener("click", render);
+  render();
+})();
+</script>
+
+<script>
+/* Front door cam: canvas cartoon. Every character is invented. */
+(function () {
+  "use strict";
+  var cv = document.getElementById("scene");
+  if (!cv || !cv.getContext) return;
+  var ctx = cv.getContext("2d");
+  var wrap = document.getElementById("scene-wrap");
+  var elStatus = document.getElementById("sc-status");
+  var elCount = document.getElementById("sc-count");
+  var TAU = Math.PI * 2, PI = Math.PI, OUT = "#2b2118";
+  var W = 390, H = 844, S = 1, dpr = 1, L = {}, T = 0;
+
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+  function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+
+  // ---------- cast (all fictional) ----------
+  var SKIN = ["#f6c9a0", "#e0a877", "#c68a5a", "#8d5a3b", "#f1d2b6"];
+  var CAST = [
+    { n: "A medieval lute player", shirt: "#3f9b57", pants: "#6b4a2b", hat: "minstrel", prop: "lute", say: "♪ la la ♪" },
+    { n: "Three raccoons in a trench coat", kind: "raccoons", say: "We are one man." },
+    { n: "A Roomba salesman", shirt: "#3b4a6b", pants: "#2b3550", tie: "#e5391f", prop: "roomba", say: "It cleans itself!" },
+    { n: "A man here about the gutters", shirt: "#f08a24", pants: "#3c5a8a", hat: "hardhat", prop: "ladder", say: "Gutters look fine." },
+    { n: "A lost Civil War reenactor", shirt: "#2f4f9e", pants: "#8fb0e0", hat: "kepi", beard: "#5a3a1e", say: "Where is the telegraph?" },
+    { n: "A lighthouse keeper", shirt: "#f2c81e", pants: "#2e3a4a", hat: "souwester", prop: "lantern", beard: "#eeeeee", long: 1, say: "Fog's rolling in." },
+    { n: "A very polite Viking", shirt: "#8a5a3a", pants: "#5b4636", hat: "viking", beard: "#d9792b", prop: "casserole", say: "Pardon me!" },
+    { n: "A rival magician", shirt: "#2a2233", pants: "#2a2233", hat: "top", cape: "#b3202e", prop: "wand", say: "Ta-da!", pair: 1 },
+    { n: "A tap water sommelier", shirt: "#f4f4f4", pants: "#22242a", vest: "#22242a", prop: "glass", say: "Notes of pipe." },
+    { n: "An off-season Santa", shirt: "#22a6b3", pants: "#b9a37a", shorts: 1, hat: "santa", beard: "#ffffff", say: "Ho ho... hi." },
+    { n: "A dad looking for the thermostat", shirt: "#7aa35a", pants: "#c9b991", shorts: 1, hat: "cap", stache: "#5a3a1e", say: "Who touched this?" },
+    { n: "A cowboy allergic to horses", shirt: "#c0392b", pants: "#3c5a8a", hat: "cowboy", say: "Howdy. Achoo." },
+    { n: "A man with a shelf nobody ordered", shirt: "#5b7fd6", pants: "#4a4a4a", prop: "box", say: "Extra screws are normal." },
+    { n: "A Victorian ghost", kind: "ghost", say: "Boo. Sorry." },
+    { n: "A guy explaining stocks to the dog", shirt: "#dfe6ee", pants: "#39424e", vest: "#44566e", prop: "phone", say: "Buy the dip!" },
+    { n: "A submarine captain, no submarine", shirt: "#1f2f55", pants: "#1f2f55", hat: "captain", long: 1, beard: "#9a9a9a", say: "Permission to come aboard?" },
+    { n: "A competitive yodeler", shirt: "#f4f4f4", pants: "#6b4a2b", shorts: 1, hat: "alpine", susp: "#2f7d3f", say: "Yodel-ay-hee-hoo!" },
+    { n: "A man who only golf claps", shirt: "#f29bb8", pants: "#f1ead8", hat: "visor", say: "*clap clap*" },
+    { n: "An apologetic lumberjack", shirt: "#c0392b", pants: "#3c5a8a", plaid: 1, hat: "beanie", beard: "#4a2f1a", say: "Sorry!" }
+  ];
+  CAST.forEach(function (c, i) { c.id = i; c.skin = SKIN[i % SKIN.length]; });
+
+  // ---------- state ----------
+  var guys = [], inside = [], clouds = [], birds = [], cars = [], smoke = [], notes = [], hearts = [], bubbles = [], flies = [];
+  var door = 0, shake = 0, tIn = 0.3, tOut = 1, tCar = 1.5, tSmoke = 0, tNote = 0;
+  var dog = { x: 0, y: 0, tx: 0, ty: 0, dir: 1, ph: 0, state: "wander", timer: 0, target: null, moving: false, hop: 0, sit: 0 };
+
+  // ---------- drawing helpers ----------
+  function rr(x, y, w, h, r) {
+    ctx.beginPath(); ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  function fs(f, lw) { ctx.fillStyle = f; ctx.fill(); if (lw !== 0) { ctx.lineWidth = lw || 2; ctx.strokeStyle = OUT; ctx.lineJoin = "round"; ctx.stroke(); } }
+  function circ(x, y, r) { ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); }
+  function ell(x, y, rx, ry, rot) { ctx.beginPath(); ctx.ellipse(x, y, rx, ry, rot || 0, 0, TAU); }
+  function line(x1, y1, x2, y2, c, w) { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.strokeStyle = c; ctx.lineWidth = w; ctx.lineCap = "round"; ctx.stroke(); }
+  function limb(x1, y1, x2, y2, c, w) { line(x1, y1, x2, y2, OUT, w + 3); line(x1, y1, x2, y2, c, w); }
+  function poly(pts) { ctx.beginPath(); ctx.moveTo(pts[0], pts[1]); for (var i = 2; i < pts.length; i += 2) ctx.lineTo(pts[i], pts[i + 1]); ctx.closePath(); }
+  function heart(x, y, s) {
+    ctx.beginPath(); ctx.moveTo(x, y + s * 0.9);
+    ctx.bezierCurveTo(x - s * 1.4, y - s * 0.2, x - s * 0.6, y - s * 1.2, x, y - s * 0.4);
+    ctx.bezierCurveTo(x + s * 0.6, y - s * 1.2, x + s * 1.4, y - s * 0.2, x, y + s * 0.9);
+  }
+  function persp(y) { return 0.6 + 0.42 * clamp((y - L.gy) / (L.sy - L.gy), 0, 1.1); }
+
+  // ---------- layout ----------
+  function resize() {
+    var r = cv.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    var nd = Math.min(window.devicePixelRatio || 1, 2);
+    if (L.cx && cv.width === Math.round(r.width * nd) && cv.height === Math.round(r.height * nd)) return;
+    dpr = nd;
+    if (r.width <= 520) S = r.width / 390;
+    else { S = Math.max(r.height / 844, r.width / 1300); S = Math.min(S, r.height / 560); }
+    W = r.width / S; H = r.height / S;
+    cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
+    var lawn = clamp(H * 0.24, 120, 200);
+    L.cx = W / 2; L.walkTop = H - 104; L.roadTop = H - 44; L.sy = H - 74; L.gy = L.walkTop - lawn;
+    init();
+  }
+
+  function init() {
+    guys = []; cars = []; smoke = []; notes = []; hearts = []; bubbles = []; inside = [];
+    clouds = []; birds = []; flies = [];
+    var i, top = Math.max(60, L.gy - 250);
+    for (i = 0; i < 5; i++) clouds.push({ x: rnd(0, W), y: rnd(30, top + 60), s: rnd(0.7, 1.3), v: rnd(5, 14) });
+    for (i = 0; i < 3; i++) birds.push({ x: rnd(0, W), y: rnd(top * 0.6, top + 30), v: rnd(26, 44) * (i % 2 ? -1 : 1), ph: rnd(0, 6) });
+    for (i = 0; i < 3; i++) flies.push({ x: rnd(20, W - 20), y: L.gy + rnd(20, 90), ph: rnd(0, 6), c: pick(["#ff7ab8", "#ffd21e", "#9b7bff"]) });
+    var pool = CAST.slice();
+    for (i = 0; i < 6; i++) inside.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+    dog.x = L.cx - 70; dog.y = L.gy + 60; dog.tx = dog.x; dog.ty = dog.y; dog.timer = 0; dog.target = null;
+    tIn = 0.2; tOut = 0.8;
+    hud();
+    for (i = 0; i < 110; i++) step(0.05);   // arrive mid-party
+    hud();
+  }
+
+  function hud(msg) {
+    if (elCount) elCount.textContent = "Inside: " + inside.length;
+    if (msg && elStatus) elStatus.textContent = msg;
+  }
+
+  // ---------- guests ----------
+  function available() {
+    var busy = {};
+    guys.forEach(function (g) { busy[g.c.id] = 1; });
+    inside.forEach(function (c) { busy[c.id] = 1; });
+    return CAST.filter(function (c) { return !busy[c.id]; });
+  }
+  function say(f, text, dy, col) {
+    if (f !== dog && f.c) {
+      if (bubbles.length >= 3) return;
+      for (var q = 0; q < bubbles.length; q++) if (Math.abs(bubbles[q].x - f.x) < 150 && Math.abs(bubbles[q].y - f.y) < 110) return;
+    }
+    if (bubbles.length > 3) bubbles.shift();
+    bubbles.push({ f: f, x: f.x, y: f.y, dy: dy || 96, text: text, life: 0, max: 2.3, col: col || "#fffdf7" });
+  }
+  function spawnIn(c, lag) {
+    var side = Math.random() < 0.5 ? -1 : 1, lane = rnd(-8, 12);
+    var g = { c: c, mode: "in", x: side < 0 ? -40 - (lag || 0) : W + 40 + (lag || 0), y: L.sy + lane, ph: rnd(0, 6), alpha: 1,
+      state: "walk", st: 0, dir: -side, speed: rnd(64, 100), i: 0, alt: lag ? 1 : 0, moving: true };
+    g.wp = [[L.cx + rnd(-16, 16), L.sy + lane], [L.cx + rnd(-4, 4), L.gy + 3]];
+    guys.push(g);
+    if (Math.random() < 0.45) g.sayAt = rnd(0.4, 2.2);
+    if (c.pair && !lag) spawnIn(c, 46).wp[0][1] = g.wp[0][1];
+    return g;
+  }
+  function spawnOut(c) {
+    var side = Math.random() < 0.5 ? -1 : 1, lane = rnd(-8, 12);
+    var g = { c: c, mode: "out", x: L.cx + rnd(-4, 4), y: L.gy + 3, ph: rnd(0, 6), alpha: 0, state: "exiting", st: 0,
+      dir: side, speed: rnd(64, 100), i: 0, alt: 0, moving: false };
+    g.wp = [[L.cx + rnd(-16, 16), L.sy + lane], [side < 0 ? -60 : W + 60, L.sy + lane]];
+    guys.push(g);
+    if (Math.random() < 0.35) g.sayAt = rnd(0.6, 1.8);
+    hud("Just left: " + c.n);
+  }
+
+  function ring() {
+    shake = 1;
+    say({ x: L.cx, y: L.gy - 60 }, "DING DONG!", 40, "#ffe680");
+    var av = available();
+    for (var i = 0; i < 2 && av.length; i++) spawnIn(av.splice(Math.floor(Math.random() * av.length), 1)[0]);
+  }
+
+  // ---------- simulation ----------
+  function step(dt) {
+    T += dt;
+    var i, g;
+
+    // spawn
+    tIn -= dt; tOut -= dt; tCar -= dt;
+    if (tIn <= 0) {
+      tIn = rnd(0.7, 1.7);
+      if (guys.length < 13) { var av = available(); if (av.length) spawnIn(pick(av)); }
+    }
+    if (tOut <= 0) {
+      tOut = inside.length > 9 ? rnd(0.4, 0.9) : rnd(0.9, 2.1);
+      if (inside.length > 2 && guys.length < 14) spawnOut(inside.splice(Math.floor(Math.random() * inside.length), 1)[0]);
+    }
+    if (tCar <= 0) {
+      tCar = rnd(2.5, 6);
+      var d = Math.random() < 0.5 ? 1 : -1;
+      cars.push({ x: d > 0 ? -90 : W + 90, d: d, v: rnd(150, 240), col: pick(["#e5391f", "#ffd21e", "#2bb3a3", "#5b7fd6", "#f29bb8", "#f4f4f4"]), taxi: Math.random() < 0.25 });
+    }
+
+    // guests
+    var wantDoor = 0;
+    for (i = guys.length - 1; i >= 0; i--) {
+      g = guys[i];
+      if (g.sayAt != null) { g.sayAt -= dt; if (g.sayAt <= 0) { g.sayAt = null; if (g.x > 40 && g.x < W - 40) say(g, g.c.say); } }
+      if (g.state === "exiting") {
+        wantDoor = 1; g.st += dt; g.alpha = clamp(g.st / 0.35, 0, 1);
+        if (g.st >= 0.35) { g.state = "walk"; g.moving = true; }
+        continue;
+      }
+      if (g.state === "entering") {
+        wantDoor = 1; g.st += dt; g.alpha = clamp(1 - g.st / 0.35, 0, 1);
+        if (g.st >= 0.35) { guys.splice(i, 1); inside.push(g.c); hud("Just arrived: " + g.c.n); }
+        continue;
+      }
+      var wp = g.wp[g.i], dx = wp[0] - g.x, dy = wp[1] - g.y, dist = Math.sqrt(dx * dx + dy * dy);
+      var sp = g.speed * (0.55 + 0.45 * persp(g.y)) * dt;
+      g.ph += dt * g.speed * 0.115;
+      if (Math.abs(dx) > 2) g.dir = dx > 0 ? 1 : -1;
+      if (dist <= sp) {
+        g.x = wp[0]; g.y = wp[1]; g.i++;
+        if (g.i >= g.wp.length) {
+          if (g.mode === "in") { g.state = "entering"; g.st = 0; g.moving = false; }
+          else guys.splice(i, 1);
+        }
+      } else { g.x += dx / dist * sp; g.y += dy / dist * sp; }
+      if (Math.abs(g.x - L.cx) < 30 && g.y < L.gy + 34) wantDoor = 1;
+    }
+    door += (wantDoor - door) * Math.min(1, dt * 12);
+    shake = Math.max(0, shake - dt * 2.2);
+
+    // Charlie
+    dog.timer -= dt;
+    if (dog.target && guys.indexOf(dog.target) < 0) { dog.target = null; dog.timer = 0; }
+    if (dog.timer <= 0) {
+      var r = Math.random(), near = guys.filter(function (q) { return q.state === "walk" && q.x > 20 && q.x < W - 20; });
+      dog.sit = 0;
+      if (r < 0.6 && near.length) { dog.state = "greet"; dog.target = pick(near); dog.timer = rnd(1.8, 3.4); }
+      else if (r < 0.88) { dog.state = "wander"; dog.target = null; dog.tx = rnd(24, W - 24); dog.ty = rnd(L.gy + 22, L.sy + 4); dog.timer = rnd(1.5, 3); }
+      else { dog.state = "sit"; dog.target = null; dog.tx = dog.x; dog.ty = dog.y; dog.timer = rnd(1.2, 2.4); dog.sit = 1; if (Math.random() < 0.6) say(dog, "Woof!", 62, "#ffe680"); }
+    }
+    if (dog.target) {
+      dog.tx = clamp(dog.target.x - dog.target.dir * 30, 16, W - 16);
+      dog.ty = clamp(dog.target.y + 7, L.gy + 20, L.sy + 14);
+    }
+    var ddx = dog.tx - dog.x, ddy = dog.ty - dog.y, dd = Math.sqrt(ddx * ddx + ddy * ddy);
+    var dsp = (dog.state === "greet" ? 190 : 85) * dt;
+    dog.moving = dd > 7;
+    if (dog.moving) {
+      dog.x += ddx / dd * Math.min(dsp, dd); dog.y += ddy / dd * Math.min(dsp, dd);
+      if (Math.abs(ddx) > 3) dog.dir = ddx > 0 ? 1 : -1;
+      dog.ph += dt * (dog.state === "greet" ? 20 : 12);
+      dog.hop = 0;
+    } else if (dog.state === "greet" && dog.target) {
+      dog.dir = dog.target.x > dog.x ? 1 : -1;
+      dog.hop = Math.abs(Math.sin(T * 11)) * 9;
+      if (Math.random() < dt * 2.2) hearts.push({ x: dog.x + rnd(-8, 8), y: dog.y - 46, life: 0, vx: rnd(-10, 10) });
+    } else dog.hop = 0;
+
+    // ambience
+    clouds.forEach(function (c) { c.x += c.v * dt; if (c.x > W + 80) c.x = -80; });
+    birds.forEach(function (b) { b.x += b.v * dt; b.ph += dt * 9; if (b.x > W + 30) b.x = -30; if (b.x < -30) b.x = W + 30; });
+    flies.forEach(function (f) { f.ph += dt; f.x += Math.cos(f.ph * 1.3) * 26 * dt; f.y += Math.sin(f.ph * 2.1) * 20 * dt; });
+    for (i = cars.length - 1; i >= 0; i--) { cars[i].x += cars[i].d * cars[i].v * dt; if (cars[i].x < -140 || cars[i].x > W + 140) cars.splice(i, 1); }
+    tSmoke -= dt; if (tSmoke <= 0) { tSmoke = 0.28; smoke.push({ x: L.cx + 73, y: L.gy - 240, r: 6, life: 0 }); }
+    for (i = smoke.length - 1; i >= 0; i--) { var s = smoke[i]; s.life += dt; s.y -= 26 * dt; s.x += (8 + Math.sin(s.life * 3) * 8) * dt; s.r += 7 * dt; if (s.life > 2.6) smoke.splice(i, 1); }
+    tNote -= dt; if (tNote <= 0) { tNote = rnd(0.25, 0.6); var sd = Math.random() < 0.5 ? -1 : 1; notes.push({ x: L.cx + sd * 72 + rnd(-14, 14), y: L.gy - 118, vx: sd * rnd(8, 24), life: 0, ch: pick(["♪", "♫"]), c: pick(["#e5391f", "#2f6fd6", "#9b3fd6", "#17140f"]) }); }
+    for (i = notes.length - 1; i >= 0; i--) { var n = notes[i]; n.life += dt; n.y -= 34 * dt; n.x += (n.vx + Math.sin(n.life * 6) * 18) * dt; if (n.life > 2.2) notes.splice(i, 1); }
+    for (i = hearts.length - 1; i >= 0; i--) { var h = hearts[i]; h.life += dt; h.y -= 36 * dt; h.x += h.vx * dt; if (h.life > 1.2) hearts.splice(i, 1); }
+    for (i = bubbles.length - 1; i >= 0; i--) { var b = bubbles[i]; b.life += dt; if (b.f) { b.x = b.f.x; b.y = b.f.y; } if (b.life > b.max) bubbles.splice(i, 1); }
+  }
+
+  // ---------- scenery ----------
+  function drawSky() {
+    var gr = ctx.createLinearGradient(0, 0, 0, L.gy);
+    gr.addColorStop(0, "#63c2ff"); gr.addColorStop(1, "#d9f4ff");
+    ctx.fillStyle = gr; ctx.fillRect(0, 0, W, L.gy + 2);
+    // sun
+    var sx = W - 58, sy = Math.max(150, L.gy - 300);
+    ctx.save(); ctx.translate(sx, sy); ctx.rotate(T * 0.35);
+    for (var i = 0; i < 10; i++) { ctx.rotate(TAU / 10); poly([26, -5, 40 + Math.sin(T * 3 + i) * 4, 0, 26, 5]); fs("#ffd21e"); }
+    ctx.restore();
+    circ(sx, sy, 24); fs("#ffe24a");
+    circ(sx - 8, sy - 3, 2.2); ctx.fillStyle = OUT; ctx.fill(); circ(sx + 8, sy - 3, 2.2); ctx.fill();
+    ctx.beginPath(); ctx.arc(sx, sy + 3, 9, 0.15 * PI, 0.85 * PI); ctx.lineWidth = 2; ctx.strokeStyle = OUT; ctx.stroke();
+    // clouds
+    clouds.forEach(function (c) {
+      ctx.fillStyle = "#ffffff";
+      circ(c.x, c.y, 16 * c.s); ctx.fill(); circ(c.x + 18 * c.s, c.y - 8 * c.s, 20 * c.s); ctx.fill();
+      circ(c.x + 40 * c.s, c.y, 16 * c.s); ctx.fill(); rr(c.x - 2 * c.s, c.y - 2 * c.s, 44 * c.s, 18 * c.s, 9 * c.s); ctx.fill();
+    });
+    // birds
+    birds.forEach(function (b) {
+      var f = Math.sin(b.ph) * 5;
+      ctx.beginPath(); ctx.moveTo(b.x - 8, b.y - f); ctx.quadraticCurveTo(b.x - 3, b.y - 4, b.x, b.y);
+      ctx.quadraticCurveTo(b.x + 3, b.y - 4, b.x + 8, b.y - f); ctx.strokeStyle = OUT; ctx.lineWidth = 2; ctx.lineCap = "round"; ctx.stroke();
+    });
+    // hills
+    ell(W * 0.2, L.gy + 30, W * 0.5, 70); ctx.fillStyle = "#8fdc7a"; ctx.fill();
+    ell(W * 0.85, L.gy + 34, W * 0.45, 62); ctx.fillStyle = "#a4e58a"; ctx.fill();
+  }
+
+  function drawTree(x, base, k, i) {
+    var sw = Math.sin(T * 1.4 + i) * 3;
+    rr(x - 7 * k, base - 70 * k, 14 * k, 72 * k, 3); fs("#8a5a2b");
+    circ(x - 18 * k + sw * 0.5, base - 78 * k, 24 * k); fs("#3fae4f");
+    circ(x + 18 * k + sw * 0.5, base - 80 * k, 24 * k); fs("#3fae4f");
+    circ(x + sw, base - 104 * k, 28 * k); fs("#4cc35c");
+    circ(x - 6 + sw, base - 112 * k, 3); ctx.fillStyle = "#e5391f"; ctx.fill();
+    circ(x + 14 + sw, base - 92 * k, 3); ctx.fill();
+  }
+
+  function drawHouse() {
+    var cx = L.cx, gy = L.gy, beat = Math.pow(Math.max(0, Math.sin(T * 7.5)), 6);
+    ctx.save();
+    ctx.translate(cx + Math.sin(T * 60) * shake * 3, gy);
+    ctx.scale(1 + beat * 0.012, 1 - beat * 0.012 + shake * 0.02);
+    ctx.translate(-cx, -gy);
+
+    // chimney, walls, roof
+    rr(cx + 60, gy - 238, 26, 60, 2); fs("#b5523b");
+    rr(cx + 56, gy - 244, 34, 9, 2); fs("#8f3f2d");
+    rr(cx - 125, gy - 150, 250, 150, 3); fs("#fff1d0");
+    for (var y = gy - 130; y < gy - 6; y += 22) line(cx - 123, y, cx + 123, y, "rgba(140,100,50,.16)", 1.5);
+    poly([cx - 148, gy - 148, cx, gy - 248, cx + 148, gy - 148]); fs("#e5533d", 2.5);
+    rr(cx - 150, gy - 154, 300, 9, 3); fs("#c7432f");
+
+    var hue = 46 + Math.sin(T * 5) * 16;
+    var lit = "hsl(" + hue + ",100%," + (72 + beat * 10) + "%)";
+
+    // attic window
+    circ(cx, gy - 190, 16); fs(lit);
+    line(cx - 16, gy - 190, cx + 16, gy - 190, OUT, 2); line(cx, gy - 206, cx, gy - 174, OUT, 2);
+
+    // windows with dancing silhouettes
+    [-100, 44].forEach(function (ox, wi) {
+      var x = cx + ox, yy = gy - 118;
+      rr(x, yy, 56, 56, 3); fs(lit);
+      ctx.save(); rr(x, yy, 56, 56, 3); ctx.clip();
+      var count = clamp(Math.ceil(inside.length / 3), 1, 3);
+      for (var k = 0; k < count; k++) {
+        var hx = x + 12 + k * 16 + Math.sin(T * 4 + k + wi) * 3, hy = yy + 34 + Math.abs(Math.sin(T * 6 + k * 1.7 + wi)) * -9;
+        ctx.fillStyle = "rgba(43,33,24,.78)";
+        circ(hx, hy, 8); ctx.fill(); rr(hx - 9, hy + 7, 18, 30, 6); ctx.fill();
+        if ((k + wi) % 2 === 0) line(hx + 8, hy + 10, hx + 15, hy - 6 + Math.sin(T * 9 + k) * 4, "rgba(43,33,24,.78)", 4);
+      }
+      ctx.restore();
+      rr(x, yy, 56, 56, 3); ctx.lineWidth = 4; ctx.strokeStyle = "#ffffff"; ctx.stroke(); ctx.lineWidth = 2; ctx.strokeStyle = OUT; rr(x - 2, yy - 2, 60, 60, 4); ctx.stroke();
+      line(x + 28, yy, x + 28, yy + 56, "#ffffff", 3); line(x, yy + 28, x + 56, yy + 28, "#ffffff", 3);
+      // flower box
+      rr(x - 4, yy + 58, 64, 10, 2); fs("#8a5a2b");
+      for (var f = 0; f < 5; f++) {
+        var fx = x + 4 + f * 12, fy = yy + 54 + Math.sin(T * 3 + f + wi) * 2;
+        circ(fx, fy, 4.5); fs(["#ff7ab8", "#ffd21e", "#ff5a3c", "#b78bff", "#ffffff"][(f + wi) % 5], 1.5);
+      }
+    });
+
+    // door
+    rr(cx - 29, gy - 90, 58, 90, 3); fs("#ffffff");
+    rr(cx - 24, gy - 85, 48, 85, 2);
+    var ig = ctx.createLinearGradient(0, gy - 85, 0, gy);
+    ig.addColorStop(0, "#3a2418"); ig.addColorStop(1, "#ffb84a"); fs(ig);
+    var dw = 48 * (1 - door * 0.82);
+    rr(cx - 24, gy - 85, dw, 85, 2); fs("#2bb3a3");
+    if (dw > 20) {
+      rr(cx - 24 + dw * 0.18, gy - 76, dw * 0.64, 26, 2); ctx.lineWidth = 1.5; ctx.strokeStyle = "rgba(0,0,0,.35)"; ctx.stroke();
+      rr(cx - 24 + dw * 0.18, gy - 42, dw * 0.64, 32, 2); ctx.stroke();
+    }
+    circ(cx - 24 + dw - 6, gy - 42, 3); fs("#ffd21e", 1.5);
+    // sign, lamp, step, mat
+    rr(cx - 30, gy - 110, 60, 15, 3); fs("#17140f");
+    ctx.fillStyle = "#ffe680"; ctx.font = "800 9px system-ui, -apple-system, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("JACEY'S", cx, gy - 102);
+    circ(cx + 40, gy - 70, 5 + beat * 1.5); fs("#ffe680", 1.5);
+    rr(cx - 38, gy - 4, 76, 9, 2); fs("#cfc6b4");
+    ctx.restore();
+
+    // bushes
+    [-112, -86, 82, 110].forEach(function (ox, i) {
+      var w = Math.sin(T * 2 + i) * 1.5;
+      circ(cx + ox + w, gy - 8, 17); fs("#3fae4f"); circ(cx + ox + 9 + w, gy - 3, 13); fs("#4cc35c");
+    });
+  }
+
+  function drawGround() {
+    ctx.fillStyle = "#7ed957"; ctx.fillRect(0, L.gy, W, L.walkTop - L.gy);
+    ctx.fillStyle = "rgba(255,255,255,.10)";
+    for (var x = -40; x < W; x += 80) { poly([x, L.walkTop, x + 40, L.walkTop, x + 40 - (x + 20 - L.cx) * 0.25, L.gy, x - (x - L.cx) * 0.25, L.gy]); ctx.fill(); }
+    line(0, L.gy, W, L.gy, OUT, 2);
+    // front path
+    poly([L.cx - 26, L.gy + 4, L.cx + 26, L.gy + 4, L.cx + 52, L.walkTop, L.cx - 52, L.walkTop]); fs("#ecd9b3");
+    for (var i = 1; i < 5; i++) { var yy = L.gy + 4 + (L.walkTop - L.gy - 4) * i / 5, hw = 26 + 26 * i / 5; line(L.cx - hw, yy, L.cx + hw, yy, "rgba(120,90,50,.35)", 1.5); }
+    // grass tufts and flowers
+    for (i = 0; i < Math.ceil(W / 46); i++) {
+      var tx = 18 + i * 46 + (i % 2) * 9, ty = L.gy + 30 + ((i * 53) % (L.walkTop - L.gy - 40));
+      if (Math.abs(tx - L.cx) < 62) continue;
+      var sw = Math.sin(T * 3 + i) * 2;
+      line(tx, ty, tx - 3 + sw, ty - 8, "#3f9b3f", 2); line(tx, ty, tx + sw, ty - 10, "#3f9b3f", 2); line(tx, ty, tx + 4 + sw, ty - 7, "#3f9b3f", 2);
+      if (i % 3 === 0) { circ(tx + sw, ty - 12, 3.5); fs(["#ff7ab8", "#ffffff", "#ffd21e"][i % 3 === 0 ? (i / 3) % 3 : 0], 1.2); }
+    }
+    // sidewalk and road
+    ctx.fillStyle = "#dcd6c8"; ctx.fillRect(0, L.walkTop, W, L.roadTop - L.walkTop);
+    line(0, L.walkTop, W, L.walkTop, OUT, 2);
+    for (x = (L.cx % 64) - 64; x < W; x += 64) line(x, L.walkTop + 2, x - 8, L.roadTop - 2, "rgba(60,50,40,.25)", 1.5);
+    ctx.fillStyle = "#b9b2a3"; ctx.fillRect(0, L.roadTop - 5, W, 5);
+    ctx.fillStyle = "#5a5f6b"; ctx.fillRect(0, L.roadTop, W, H - L.roadTop);
+    line(0, L.roadTop, W, L.roadTop, OUT, 2);
+    for (x = 10; x < W; x += 54) { rr(x, L.roadTop + 20, 28, 4, 2); ctx.fillStyle = "#ffe680"; ctx.fill(); }
+  }
+
+  function drawMailbox() {
+    var x = L.cx + 82, y = L.walkTop - 4;
+    rr(x - 3, y - 34, 6, 34, 1); fs("#8a5a2b");
+    rr(x - 14, y - 50, 28, 18, 8); fs("#5b7fd6");
+    ctx.save(); ctx.translate(x + 12, y - 40); ctx.rotate(-0.4 + Math.sin(T * 5) * 0.25);
+    rr(-1.5, -16, 3, 16, 1); fs("#e5391f", 1.2); rr(-1.5, -17, 9, 6, 1); fs("#e5391f", 1.2); ctx.restore();
+  }
+
+  function drawCar(c) {
+    ctx.save(); ctx.translate(c.x, H - 9 + Math.sin(T * 22 + c.x * 0.05) * 0.8); ctx.scale(c.d, 1);
+    rr(-34, -22, 68, 16, 6); fs(c.taxi ? "#ffd21e" : c.col);
+    poly([-20, -22, -12, -36, 14, -36, 24, -22]); fs(c.taxi ? "#ffd21e" : c.col);
+    poly([-14, -23, -9, -33, 0, -33, 0, -23]); fs("#cfefff", 1.5); poly([3, -23, 3, -33, 12, -33, 19, -23]); fs("#cfefff", 1.5);
+    if (c.taxi) { rr(-6, -41, 14, 6, 2); fs("#17140f", 1.2); }
+    circ(33, -15, 2.5); fs("#fff6b0", 1.2);
+    [-20, 20].forEach(function (wx) {
+      circ(wx, -6, 7); fs("#22242a");
+      circ(wx, -6, 3); ctx.fillStyle = "#c9ccd3"; ctx.fill();
+      ctx.save(); ctx.translate(wx, -6); ctx.rotate(c.x * 0.14); line(-5, 0, 5, 0, "#c9ccd3", 1.5); ctx.restore();
+    });
+    for (var k = 0; k < 3; k++) { circ(-40 - k * 9 - (T * 40 % 9), -7 - k * 2, 3 + k); ctx.fillStyle = "rgba(255,255,255," + (0.35 - k * 0.1) + ")"; ctx.fill(); }
+    ctx.restore();
+  }
+
+  // ---------- characters ----------
+  function drawHat(h, d) {
+    switch (h) {
+      case "cap": ctx.beginPath(); ctx.arc(0, -76, 11.5, PI, 0); ctx.closePath(); fs("#2f6fd6"); rr(d > 0 ? 3 : -18, -78, 15, 4, 2); fs("#2f6fd6"); break;
+      case "cowboy": ell(0, -80, 20, 4.5); fs("#9a6a35"); rr(-9, -95, 18, 15, 6); fs("#9a6a35"); line(-8, -84, 8, -84, "#3a2418", 2); break;
+      case "viking":
+        [-1, 1].forEach(function (s) { ctx.beginPath(); ctx.moveTo(s * 9, -80); ctx.quadraticCurveTo(s * 21, -82, s * 18, -98); ctx.quadraticCurveTo(s * 12, -88, s * 7, -86); ctx.closePath(); fs("#fff6dc"); });
+        ctx.beginPath(); ctx.arc(0, -77, 12, PI, 0); ctx.closePath(); fs("#b9c0c9"); rr(-12.5, -80, 25, 4, 2); fs("#8d949e"); break;
+      case "santa": ctx.beginPath(); ctx.moveTo(-11, -79); ctx.quadraticCurveTo(-2, -106, 16, -90); ctx.lineTo(11, -79); ctx.closePath(); fs("#d9302c"); rr(-12.5, -83, 25, 6, 3); fs("#ffffff"); circ(16, -90, 4); fs("#ffffff"); break;
+      case "top": rr(-9, -105, 18, 23, 2); fs("#1d1a22"); rr(-15, -84, 30, 4, 2); fs("#1d1a22"); line(-8, -88, 8, -88, "#b3202e", 2.5); break;
+      case "kepi": rr(-9.5, -94, 19, 13, 3); fs("#2f4f9e"); rr(d > 0 ? 2 : -17, -83, 15, 3.5, 1.5); fs("#1d1a22"); break;
+      case "captain": ell(0, -89, 14, 6); fs("#ffffff"); rr(-10.5, -88, 21, 6, 2); fs("#1f2f55"); rr(d > 0 ? 1 : -16, -83, 15, 3.5, 1.5); fs("#1d1a22"); circ(0, -85, 1.8); ctx.fillStyle = "#ffd21e"; ctx.fill(); break;
+      case "souwester": ell(-d * 3, -79, 18, 4.5); fs("#f2c81e"); ctx.beginPath(); ctx.arc(0, -78, 12, PI, 0); ctx.closePath(); fs("#f2c81e"); break;
+      case "hardhat": ctx.beginPath(); ctx.arc(0, -77, 12.5, PI, 0); ctx.closePath(); fs("#ffd21e"); rr(-14.5, -80, 29, 4, 2); fs("#ffd21e"); break;
+      case "alpine": poly([-14, -80, -6, -96, 7, -96, 14, -80]); fs("#2f7d3f"); line(7, -94, 13, -107, "#e5391f", 3); break;
+      case "beanie": ctx.beginPath(); ctx.arc(0, -77, 11.5, PI, 0); ctx.closePath(); fs("#e5a11e"); rr(-12.5, -81, 25, 5, 2.5); fs("#c78412"); circ(0, -90, 3.5); fs("#e5a11e"); break;
+      case "visor": rr(-12, -81, 24, 4, 2); fs("#ffffff"); rr(d > 0 ? 3 : -20, -80, 17, 3.5, 1.5); fs("#ffffff"); break;
+      case "minstrel": ctx.beginPath(); ctx.moveTo(-12, -79); ctx.quadraticCurveTo(-4, -97, 14, -85); ctx.lineTo(12, -78); ctx.closePath(); fs("#3f9b57"); line(-4, -90, -14, -105, "#e5391f", 3); break;
+    }
+  }
+
+  function drawProp(p, g) {   // drawn facing right; caller flips
+    switch (p) {
+      case "lute":
+        ctx.save(); ctx.translate(9, -42); ctx.rotate(-0.45 + Math.sin(g.ph * 2) * 0.05);
+        rr(7, -2.5, 24, 5, 1.5); fs("#6b4a2b", 1.5); ell(0, 0, 11, 9); fs("#d59a45"); circ(0, 0, 3); ctx.fillStyle = "#3a2418"; ctx.fill();
+        rr(29, -4.5, 6, 9, 1.5); fs("#3a2418", 1.2); ctx.restore(); break;
+      case "casserole":
+        rr(7, -47, 24, 11, 3); fs("#4aa3df"); rr(5, -49, 28, 4, 2); fs("#e8f4ff", 1.5);
+        for (var i = 0; i < 2; i++) { ctx.beginPath(); ctx.moveTo(13 + i * 10, -52); ctx.quadraticCurveTo(9 + i * 10 + Math.sin(T * 5 + i) * 3, -58, 13 + i * 10, -64); ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.lineWidth = 2; ctx.stroke(); }
+        break;
+      case "ladder":
+        line(-16, -22, 20, -104, OUT, 5.5); line(-8, -18, 28, -100, OUT, 5.5);
+        line(-16, -22, 20, -104, "#d9b36a", 3); line(-8, -18, 28, -100, "#d9b36a", 3);
+        for (var k = 1; k < 6; k++) line(-16 + k * 6, -22 - k * 13.6, -8 + k * 6, -18 - k * 13.6, "#b08a45", 2.5);
+        break;
+      case "lantern":
+        circ(19, -31, 12 + Math.sin(T * 6) * 2); ctx.fillStyle = "rgba(255,230,128,.35)"; ctx.fill();
+        line(17, -40, 19, -37, OUT, 2); rr(14, -37, 10, 13, 2); fs("#ffe680"); rr(13, -39, 12, 3, 1); fs("#3a2418", 1); break;
+      case "wand":
+        line(14, -42, 28, -60, OUT, 4.5); line(14, -42, 28, -60, "#1d1a22", 2.5); line(25, -56, 28, -60, "#ffffff", 2.5);
+        var tw = 2 + Math.abs(Math.sin(T * 8 + g.ph)) * 4;
+        line(30 - tw, -63, 30 + tw, -63, "#ffd21e", 2); line(30, -63 - tw, 30, -63 + tw, "#ffd21e", 2); break;
+      case "glass": poly([13, -54, 24, -54, 22, -40, 15, -40]); fs("#bfe6ff", 1.5); line(15, -49, 22, -49, "#ffffff", 1.5); break;
+      case "box": rr(4, -60, 28, 36, 2); fs("#c9a15a"); line(18, -60, 18, -24, "#a07c3d", 3); break;
+      case "phone": rr(14, -52, 8, 13, 2); fs("#22242a", 1.5); break;
+      case "roomba":
+        ell(-30, -4, 12, 5); fs("#2a2d33"); ell(-30, -5.5, 7, 2.5); ctx.fillStyle = "#4a4f59"; ctx.fill();
+        circ(-30, -6, 1.6); ctx.fillStyle = Math.sin(T * 10) > 0 ? "#5bff8a" : "#1f6b38"; ctx.fill(); break;
+    }
+  }
+
+  function drawMan(g) {
+    var c = g.c, d = g.dir, mv = g.moving, sw = mv ? Math.sin(g.ph) : 0, bob = mv ? Math.abs(Math.cos(g.ph)) * 2.5 : 0;
+    var cape = g.alt ? "#2f6fd6" : c.cape;
+    // legs
+    [-1, 1].forEach(function (s) {
+      var fx = s * 5 + sw * s * 8 * d, fy = mv ? -Math.max(0, s * Math.cos(g.ph)) * 5 : 0;
+      if (c.shorts) { limb(s * 5, -30, fx, fy - 3, c.skin, 6); limb(s * 5, -30, s * 5 + (fx - s * 5) * 0.45, -17, c.pants, 8); }
+      else limb(s * 5, -30, fx, fy - 3, c.pants, 7);
+      ell(fx + d * 2.5, fy - 2, 6.5, 3.5); fs(c.kind ? "#333" : "#3a2418", 1.5);
+    });
+    ctx.save(); ctx.translate(0, -bob);
+    if (c.prop === "ladder" || c.prop === "roomba") { ctx.save(); ctx.scale(d, 1); if (c.prop === "roomba") ctx.translate(0, bob); drawProp(c.prop, g); ctx.restore(); }
+    if (cape) { var fl = Math.sin(T * 7 + g.ph) * 4; poly([-10, -60, 10, -60, 14 - d * 8, -24, -d * 22 + fl, -20, -14 - d * 8, -26]); fs(cape); }
+    // back arm
+    var hold = c.prop && c.prop !== "roomba" && c.prop !== "ladder";
+    limb(-d * 12, -57, -d * 15 + sw * 7 * d, -39, c.shirt, 6); circ(-d * 15 + sw * 7 * d, -37, 3.6); fs(c.skin, 1.5);
+    // torso
+    rr(-12, -62, 24, c.long ? 44 : 34, 6); fs(c.shirt);
+    if (c.plaid) { ctx.save(); rr(-12, -62, 24, 34, 6); ctx.clip(); for (var p = -10; p <= 10; p += 7) { line(p, -62, p, -28, "rgba(0,0,0,.4)", 2); } for (p = -56; p < -28; p += 8) line(-12, p, 12, p, "rgba(0,0,0,.4)", 2); ctx.restore(); }
+    if (c.vest) { rr(-12, -62, 9, 32, 4); fs(c.vest, 1.5); rr(3, -62, 9, 32, 4); fs(c.vest, 1.5); }
+    if (c.susp) { line(-7, -61, -7, -30, c.susp, 3); line(7, -61, 7, -30, c.susp, 3); line(-7, -48, 7, -48, c.susp, 3); }
+    if (c.tie) { poly([-2.5, -60, 2.5, -60, 3.5, -44, 0, -40, -3.5, -44]); fs(c.tie, 1.2); }
+    if (c.long) line(-12, -38, 12, -38, "rgba(0,0,0,.35)", 2.5);
+    // head
+    circ(0, -72, 11); fs(c.skin);
+    if (c.beard) { ctx.beginPath(); ctx.arc(0, -70, 11.5, 0.05 * PI, 0.95 * PI); ctx.quadraticCurveTo(0, -50, 11.3, -68.5); ctx.closePath(); fs(c.beard, 1.5); }
+    circ(d * 2 - 4, -74, 1.7); ctx.fillStyle = OUT; ctx.fill(); circ(d * 2 + 4, -74, 1.7); ctx.fill();
+    if (c.stache) { rr(d * 2 - 6, -70, 12, 3.5, 1.7); ctx.fillStyle = c.stache; ctx.fill(); }
+    ctx.beginPath(); ctx.arc(d * 2, -69, 4.5, 0.15 * PI, 0.85 * PI); ctx.lineWidth = 1.6; ctx.strokeStyle = c.beard === "#ffffff" || c.beard === "#eeeeee" ? "#9a6a5a" : OUT; ctx.stroke();
+    drawHat(c.hat, d);
+    // front arm and prop
+    if (hold) { limb(d * 12, -57, d * 16, -41, c.shirt, 6); ctx.save(); ctx.scale(d, 1); drawProp(c.prop, g); ctx.restore(); circ(d * 16, -40, 3.6); fs(c.skin, 1.5); }
+    else if (c.hat === "visor") { var cl = Math.abs(Math.sin(T * 9)) * 4; limb(d * 12, -57, d * 4 + cl, -46, c.shirt, 6); circ(d * 4 + cl, -45, 3.6); fs(c.skin, 1.5); }
+    else { limb(d * 12, -57, d * 15 - sw * 7 * d, -39, c.shirt, 6); circ(d * 15 - sw * 7 * d, -37, 3.6); fs(c.skin, 1.5); }
+    ctx.restore();
+  }
+
+  function raccoonFace(x, y, r) {
+    [-1, 1].forEach(function (s) { poly([x + s * r * 0.9, y - r * 0.5, x + s * r * 0.95, y - r * 1.35, x + s * r * 0.25, y - r * 0.9]); fs("#8b8f98", 1.5); });
+    circ(x, y, r); fs("#a9adb5");
+    ell(x - r * 0.45, y - r * 0.1, r * 0.42, r * 0.3, 0.3); ctx.fillStyle = "#2a2d33"; ctx.fill(); ell(x + r * 0.45, y - r * 0.1, r * 0.42, r * 0.3, -0.3); ctx.fill();
+    circ(x - r * 0.42, y - r * 0.12, r * 0.14); ctx.fillStyle = "#fff"; ctx.fill(); circ(x + r * 0.42, y - r * 0.12, r * 0.14); ctx.fill();
+    ell(x, y + r * 0.45, r * 0.42, r * 0.32); ctx.fillStyle = "#e9ebef"; ctx.fill(); circ(x, y + r * 0.32, r * 0.16); ctx.fillStyle = "#17140f"; ctx.fill();
+  }
+  function drawRaccoons(g) {
+    var wob = Math.sin(g.ph * 1.3) * 0.07, d = g.dir, sh = g.moving ? Math.sin(g.ph) * 3 : 0;
+    // tail
+    ctx.save(); ctx.translate(-d * 10, -10); ctx.rotate(-d * (0.5 + Math.sin(T * 6) * 0.3));
+    for (var i = 0; i < 4; i++) { ell(-d * (6 + i * 6), 0, 5, 5 - i * 0.5); fs(i % 2 ? "#2a2d33" : "#a9adb5", 1.5); }
+    ctx.restore();
+    ell(-5 + sh, -2, 5, 3); fs("#2a2d33", 1.5); ell(5 - sh, -2, 5, 3); fs("#2a2d33", 1.5);
+    ctx.save(); ctx.rotate(wob);
+    poly([-13, -74, 13, -74, 17, -6, -17, -6]); fs("#c9a66b");
+    line(0, -72, 0, -8, "rgba(0,0,0,.3)", 1.5); rr(-16, -46, 32, 5, 2); fs("#8a6a35", 1.5);
+    poly([-13, -74, 0, -62, 13, -74, 6, -80, -6, -80]); fs("#b8935a", 1.5);
+    // middle raccoon peeking out
+    rr(-7, -38, 14, 13, 3); fs("#3a2418", 1.5); raccoonFace(Math.sin(T * 3) * 1.5, -31, 5.5);
+    // sleeves, top raccoon, fedora
+    limb(-13, -70, -19, -46 + sh, "#c9a66b", 6); limb(13, -70, 19, -46 - sh, "#c9a66b", 6);
+    raccoonFace(0, -86, 10);
+    ell(0, -95, 17, 3.5); fs("#5b4636"); rr(-9, -107, 18, 12, 4); fs("#5b4636");
+    ctx.restore();
+  }
+  function drawGhost(g) {
+    var fl = Math.sin(T * 3 + g.ph) * 4, d = g.dir;
+    ctx.save(); ctx.translate(0, -8 + fl); ctx.globalAlpha *= 0.8;
+    ctx.beginPath(); ctx.moveTo(-14, -8); ctx.lineTo(-14, -66); ctx.arc(0, -66, 14, PI, 0); ctx.lineTo(14, -8);
+    for (var i = 0; i < 4; i++) { var x = 14 - i * 7; ctx.quadraticCurveTo(x - 3.5, -16 + Math.sin(T * 6 + i) * 3, x - 7, -8); }
+    ctx.closePath(); fs("#f4fbff");
+    circ(d * 3 - 5, -66, 2.4); ctx.fillStyle = OUT; ctx.fill(); circ(d * 3 + 5, -66, 2.4); ctx.fill(); ell(d * 3, -57, 3, 4); ctx.fill();
+    ell(0, -78, 16, 4); fs("#4a4f59"); ctx.beginPath(); ctx.arc(0, -79, 11, PI, 0); ctx.closePath(); fs("#4a4f59");
+    ctx.save(); ctx.scale(d, 1); line(14, -34, 22, -70, OUT, 4.5); line(14, -34, 22, -70, "#8a5a2b", 2.5); poly([18, -72, 26, -70, 28, -84, 18, -86]); fs("#d9b36a", 1.5); ctx.restore();
+    ctx.restore();
+  }
+
+  function drawGuy(g) {
+    var s = persp(g.y);
+    ctx.save(); ctx.translate(g.x, g.y); ctx.scale(s, s); ctx.globalAlpha = g.alpha;
+    ell(0, 0, 15, 4.5); ctx.fillStyle = "rgba(0,0,0,.18)"; ctx.fill();
+    if (g.c.kind === "raccoons") drawRaccoons(g); else if (g.c.kind === "ghost") drawGhost(g); else drawMan(g);
+    ctx.restore();
+  }
+
+  function drawDog() {
+    var s = persp(dog.y) * 1.08, d = dog.dir, run = dog.moving ? Math.sin(dog.ph) : 0, G = "#e9b24c", GD = "#c98a2b", GL = "#f7d896";
+    var wag = Math.sin(T * (dog.state === "greet" ? 26 : 13)) * 0.6, pant = Math.abs(Math.sin(T * 9));
+    ctx.save(); ctx.translate(dog.x, dog.y); ctx.scale(s, s);
+    ell(0, 0, 22, 5); ctx.fillStyle = "rgba(0,0,0,.18)"; ctx.fill();
+    ctx.translate(0, -dog.hop); ctx.scale(d, 1);
+    if (dog.sit) { ctx.translate(-4, 0); ctx.rotate(-0.42); }
+    // tail
+    ctx.save(); ctx.translate(-17, -25); ctx.rotate(0.7 + wag);
+    ctx.beginPath(); ctx.moveTo(0, -3); ctx.quadraticCurveTo(-12, -16, -24, -18); ctx.quadraticCurveTo(-18, -4, -2, 4); ctx.closePath(); fs(G);
+    ctx.restore();
+    // far legs
+    if (!dog.sit) limb(-12, -14, -12 - run * 8, -2, GD, 5.5);
+    limb(11, -14, 11 + run * 8, -2, GD, 5.5);
+    // body
+    ell(0, -20, 21, 11); fs(G);
+    ell(9, -15, 8, 7); ctx.fillStyle = GL; ctx.fill();
+    // near legs
+    if (dog.sit) { ell(-13, -11, 9, 7, 0.4); fs(G); }
+    else { limb(-15, -14, -15 + run * 8, -2, G, 6); ell(-14 + run * 8, -1.5, 4.5, 2.5); fs(GL, 1.5); }
+    limb(15, -14, 15 - run * 8, -2, G, 6); ell(16 - run * 8, -1.5, 4.5, 2.5); fs(GL, 1.5);
+    // collar
+    ctx.save(); if (dog.sit) ctx.rotate(0.3);
+    line(13, -31, 22, -24, "#e5391f", 4); circ(19, -23, 2.5); fs("#ffd21e", 1.2);
+    // head
+    var hb = Math.sin(T * 5) * 1;
+    circ(21, -36 + hb, 10.5); fs(G);
+    ell(31, -33 + hb, 7.5, 5.5); fs(GL);
+    circ(37, -35 + hb, 2.4); ctx.fillStyle = "#17140f"; ctx.fill();
+    rr(28, -30 + hb, 5.5, 4 + pant * 5, 2.5); fs("#ff7a9a", 1.3);
+    circ(23, -39 + hb, 1.9); ctx.fillStyle = "#17140f"; ctx.fill(); circ(23.6, -39.6 + hb, 0.6); ctx.fillStyle = "#fff"; ctx.fill();
+    ell(14, -34 + hb, 5.5, 10, 0.35 + run * 0.15); fs(GD);
+    ctx.restore();
+    ctx.restore();
+  }
+  function drawDogTag() {
+    var s = persp(dog.y) * 1.08, ty = dog.y - 60 * s - dog.hop * s;
+    ctx.font = "800 11px system-ui, -apple-system, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    var tw = ctx.measureText("Charlie").width + 12;
+    rr(dog.x - tw / 2, ty - 8, tw, 16, 8); fs("#fffdf7", 1.5);
+    ctx.fillStyle = "#17140f"; ctx.fillText("Charlie", dog.x, ty + 0.5);
+  }
+
+  function drawFx() {
+    smoke.forEach(function (s) { circ(s.x, s.y, s.r); ctx.fillStyle = "rgba(255,255,255," + clamp(0.75 - s.life * 0.29, 0, 1) + ")"; ctx.fill(); });
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    notes.forEach(function (n) {
+      ctx.globalAlpha = clamp(1.6 - n.life * 0.75, 0, 1); ctx.fillStyle = n.c;
+      ctx.font = "800 " + (15 + n.life * 3) + "px system-ui, -apple-system, sans-serif"; ctx.fillText(n.ch, n.x, n.y);
+    });
+    ctx.globalAlpha = 1;
+    flies.forEach(function (f) {
+      var w = Math.abs(Math.sin(T * 16 + f.ph)) * 5 + 1;
+      ell(f.x - w * 0.6, f.y, w, 5); fs(f.c, 1); ell(f.x + w * 0.6, f.y, w, 5); fs(f.c, 1); line(f.x, f.y - 4, f.x, f.y + 4, OUT, 1.5);
+    });
+    hearts.forEach(function (h) { ctx.globalAlpha = clamp(1.2 - h.life, 0, 1); heart(h.x, h.y, 5 + h.life * 3); fs("#ff4f7a", 1.3); });
+    ctx.globalAlpha = 1;
+  }
+
+  function drawBubbles() {
+    ctx.font = "800 12px system-ui, -apple-system, sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    bubbles.forEach(function (b) {
+      var k = clamp(b.life / 0.15, 0, 1) * clamp((b.max - b.life) / 0.25, 0, 1);
+      var s = b.f && b.f.y ? persp(b.y) : 1, w = ctx.measureText(b.text).width + 16;
+      var x = clamp(b.x, w / 2 + 6, W - w / 2 - 6), y = b.y - b.dy * s - b.life * 5;
+      ctx.save(); ctx.translate(x, y); ctx.scale(0.6 + 0.4 * k, 0.6 + 0.4 * k); ctx.globalAlpha = k;
+      poly([-5, 9, 5, 9, clamp(b.x - x, -w / 2 + 8, w / 2 - 8), 18]); fs(b.col);
+      rr(-w / 2, -11, w, 22, 9); fs(b.col);
+      ctx.fillStyle = "#17140f"; ctx.fillText(b.text, 0, 0.5);
+      ctx.restore();
+    });
+  }
+
+  function draw() {
+    ctx.setTransform(dpr * S, 0, 0, dpr * S, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    drawSky();
+    var k, n = 0;
+    for (k = L.cx - 172; k > -60; k -= 210) drawTree(k, L.gy + 6, 1.05, n++);
+    for (k = L.cx + 176; k < W + 60; k += 210) drawTree(k, L.gy + 6, 1.05, n++);
+    drawGround();
+    drawHouse();
+    // depth-sorted actors
+    var actors = guys.map(function (g) { return { y: g.y, t: 0, o: g }; });
+    actors.push({ y: dog.y, t: 1 }); actors.push({ y: L.walkTop - 4, t: 2 });
+    actors.sort(function (a, b) { return a.y - b.y; });
+    actors.forEach(function (a) { if (a.t === 0) drawGuy(a.o); else if (a.t === 1) drawDog(); else drawMailbox(); });
+    cars.forEach(drawCar);
+    drawDogTag();
+    drawFx();
+    drawBubbles();
+  }
+
+  // ---------- loop ----------
+  var running = false, visible = true, last = 0, reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function frame(ts) {
+    if (!running) return;
+    var dt = Math.min(0.05, (ts - last) / 1000 || 0); last = ts;
+    step(dt); draw();
+    requestAnimationFrame(frame);
+  }
+  function start() { if (running || !visible || document.hidden || reduce) return; running = true; last = performance.now(); requestAnimationFrame(frame); }
+  function stop() { running = false; }
+
+  cv.addEventListener("click", function (e) {
+    if (reduce) { reduce = false; var ht = document.getElementById("sc-hint-text"); if (ht) ht.textContent = "Tap to ring the bell · Pet Charlie"; start(); return; }
+    var r = cv.getBoundingClientRect(), x = (e.clientX - r.left) / S, y = (e.clientY - r.top) / S;
+    var dx = x - dog.x, dy = y - (dog.y - 24);
+    if (dx * dx + dy * dy < 46 * 46) {
+      say(dog, pick(["Woof!", "Woof woof!", "Bork!"]), 62, "#ffe680");
+      for (var i = 0; i < 7; i++) hearts.push({ x: dog.x + rnd(-16, 16), y: dog.y - 40 + rnd(-8, 8), life: rnd(0, 0.3), vx: rnd(-24, 24) });
+      dog.state = "greet"; dog.target = null; dog.tx = dog.x; dog.ty = dog.y; dog.timer = 1.1; dog.sit = 0; dog.hop = 10;
+    } else ring();
+  });
+
+  window.addEventListener("resize", resize);
+  window.addEventListener("orientationchange", function () { setTimeout(resize, 250); });
+  document.addEventListener("visibilitychange", function () { if (document.hidden) stop(); else start(); });
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver(function (en) { visible = en[0].isIntersecting; if (visible) start(); else stop(); }, { threshold: 0.02 }).observe(wrap);
+  }
+
+  resize();
+  draw();
+  if (reduce) { var ht = document.getElementById("sc-hint-text"); if (ht) ht.textContent = "Tap to play"; }
+  start();
+})();
+</script>
+</body>
+</html>
